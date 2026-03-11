@@ -4,6 +4,8 @@ namespace KeyboardIndicators;
 
 internal sealed class ShortcutSettingsForm : Form
 {
+    private readonly Panel _activeColorPreviewPanel;
+    private readonly Button _chooseColorButton;
     private readonly ComboBox _prefixModeComboBox;
     private readonly TextBox _customPrefixTextBox;
     private readonly Label _customPrefixLabel;
@@ -22,6 +24,7 @@ internal sealed class ShortcutSettingsForm : Form
             LanguagePreference = currentSettings.LanguagePreference,
             ShortcutPrefixMode = currentSettings.ShortcutPrefixMode,
             CustomShortcutPrefix = currentSettings.CustomShortcutPrefix,
+            ActiveIndicatorColorArgb = currentSettings.ActiveIndicatorColorArgb,
             NumLockShortcut = currentSettings.NumLockShortcut.Clone(),
             CapsLockShortcut = currentSettings.CapsLockShortcut.Clone(),
             ScrollLockShortcut = currentSettings.ScrollLockShortcut.Clone()
@@ -33,7 +36,7 @@ internal sealed class ShortcutSettingsForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(560, 332);
+        ClientSize = new Size(560, 386);
 
         var titleLabel = new Label
         {
@@ -90,9 +93,32 @@ internal sealed class ShortcutSettingsForm : Form
         };
         _customPrefixTextBox.TextChanged += (_, _) => TrimCustomPrefix();
 
-        _numLockTextBox = new ShortcutCaptureTextBox(Settings.NumLockShortcut, _strings) { Location = new Point(160, 176) };
-        _capsLockTextBox = new ShortcutCaptureTextBox(Settings.CapsLockShortcut, _strings) { Location = new Point(160, 214) };
-        _scrollLockTextBox = new ShortcutCaptureTextBox(Settings.ScrollLockShortcut, _strings) { Location = new Point(160, 252) };
+        var activeColorLabel = new Label
+        {
+            AutoSize = true,
+            Location = new Point(16, 164),
+            Text = _strings.SettingsActiveColorLabel
+        };
+
+        _activeColorPreviewPanel = new Panel
+        {
+            Location = new Point(160, 160),
+            Size = new Size(40, 27),
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = Settings.GetActiveIndicatorColor()
+        };
+
+        _chooseColorButton = new Button
+        {
+            Text = _strings.SettingsChooseColor,
+            Location = new Point(208, 159),
+            Size = new Size(85, 28)
+        };
+        _chooseColorButton.Click += ChooseActiveColor;
+
+        _numLockTextBox = new ShortcutCaptureTextBox(Settings.NumLockShortcut, _strings) { Location = new Point(160, 224) };
+        _capsLockTextBox = new ShortcutCaptureTextBox(Settings.CapsLockShortcut, _strings) { Location = new Point(160, 262) };
+        _scrollLockTextBox = new ShortcutCaptureTextBox(Settings.ScrollLockShortcut, _strings) { Location = new Point(160, 300) };
 
         Controls.Add(titleLabel);
         Controls.Add(descriptionLabel);
@@ -100,21 +126,24 @@ internal sealed class ShortcutSettingsForm : Form
         Controls.Add(_prefixModeComboBox);
         Controls.Add(_customPrefixLabel);
         Controls.Add(_customPrefixTextBox);
-        Controls.Add(CreateRowLabel(_strings.NumLockName, 180));
-        Controls.Add(CreateRowLabel(_strings.CapsLockName, 218));
-        Controls.Add(CreateRowLabel(_strings.ScrollLockName, 256));
+        Controls.Add(activeColorLabel);
+        Controls.Add(_activeColorPreviewPanel);
+        Controls.Add(_chooseColorButton);
+        Controls.Add(CreateRowLabel(_strings.NumLockName, 228));
+        Controls.Add(CreateRowLabel(_strings.CapsLockName, 266));
+        Controls.Add(CreateRowLabel(_strings.ScrollLockName, 304));
         Controls.Add(_numLockTextBox);
         Controls.Add(_capsLockTextBox);
         Controls.Add(_scrollLockTextBox);
-        Controls.Add(CreateClearButton(_numLockTextBox, _strings, 454, 175));
-        Controls.Add(CreateClearButton(_capsLockTextBox, _strings, 454, 213));
-        Controls.Add(CreateClearButton(_scrollLockTextBox, _strings, 454, 251));
+        Controls.Add(CreateClearButton(_numLockTextBox, _strings, 454, 223));
+        Controls.Add(CreateClearButton(_capsLockTextBox, _strings, 454, 261));
+        Controls.Add(CreateClearButton(_scrollLockTextBox, _strings, 454, 299));
 
         var saveButton = new Button
         {
             Text = _strings.Save,
             DialogResult = DialogResult.OK,
-            Location = new Point(388, 292),
+            Location = new Point(388, 346),
             Size = new Size(75, 28)
         };
         saveButton.Click += SaveSettings;
@@ -123,7 +152,7 @@ internal sealed class ShortcutSettingsForm : Form
         {
             Text = _strings.Cancel,
             DialogResult = DialogResult.Cancel,
-            Location = new Point(469, 292),
+            Location = new Point(469, 346),
             Size = new Size(75, 28)
         };
 
@@ -175,6 +204,7 @@ internal sealed class ShortcutSettingsForm : Form
             LanguagePreference = Settings.LanguagePreference,
             ShortcutPrefixMode = prefixMode,
             CustomShortcutPrefix = customPrefix,
+            ActiveIndicatorColorArgb = _activeColorPreviewPanel.BackColor.ToArgb(),
             NumLockShortcut = _numLockTextBox.Shortcut.Clone(),
             CapsLockShortcut = _capsLockTextBox.Shortcut.Clone(),
             ScrollLockShortcut = _scrollLockTextBox.Shortcut.Clone()
@@ -208,6 +238,23 @@ internal sealed class ShortcutSettingsForm : Form
         var selectionStart = _customPrefixTextBox.SelectionStart;
         _customPrefixTextBox.Text = trimmed;
         _customPrefixTextBox.SelectionStart = Math.Min(selectionStart, trimmed.Length);
+    }
+
+    private void ChooseActiveColor(object? sender, EventArgs e)
+    {
+        using var colorDialog = new ColorDialog
+        {
+            AllowFullOpen = true,
+            FullOpen = true,
+            Color = _activeColorPreviewPanel.BackColor
+        };
+
+        if (colorDialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        _activeColorPreviewPanel.BackColor = colorDialog.Color;
     }
 
     private sealed record PrefixModeOption(ShortcutPrefixMode Mode, string Text)

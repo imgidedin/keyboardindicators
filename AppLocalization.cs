@@ -22,6 +22,7 @@ internal sealed class AppStrings
     public required string PortugueseBrazilLabel { get; init; }
     public required string RefreshNow { get; init; }
     public required string ConfigureShortcuts { get; init; }
+    public required string SettingsMenu { get; init; }
     public required string LaunchAtStartup { get; init; }
     public required string LaunchAtStartupManagedBySystem { get; init; }
     public required string Exit { get; init; }
@@ -30,6 +31,8 @@ internal sealed class AppStrings
     public required string SettingsDescription { get; init; }
     public required string SettingsPrefixModeLabel { get; init; }
     public required string SettingsCustomPrefixLabel { get; init; }
+    public required string SettingsActiveColorLabel { get; init; }
+    public required string SettingsChooseColor { get; init; }
     public required string Save { get; init; }
     public required string Cancel { get; init; }
     public required string Clear { get; init; }
@@ -73,14 +76,17 @@ internal static class AppLocalization
         PortugueseBrazilLabel = "Portuguese (Brazil)",
         RefreshNow = "Refresh now",
         ConfigureShortcuts = "Configure shortcuts...",
+        SettingsMenu = "Settings...",
         LaunchAtStartup = "Launch at startup",
         LaunchAtStartupManagedBySystem = "Launch at startup (managed by the system)",
         Exit = "Exit",
-        SettingsDialogTitle = "Configure shortcut reminders",
-        SettingsTitle = "Shortcuts shown in the popup",
-        SettingsDescription = "These shortcuts are only shown as reminders. Click a field, press the sequence in the desired order, and save. If left empty, the popup shows only the key itself.",
+        SettingsDialogTitle = "Settings",
+        SettingsTitle = "Popup settings",
+        SettingsDescription = "Choose how shortcut hints are shown and which color should be used when an indicator is active.",
         SettingsPrefixModeLabel = "Initial function label",
         SettingsCustomPrefixLabel = "Custom label",
+        SettingsActiveColorLabel = "Active indicator color",
+        SettingsChooseColor = "Choose...",
         Save = "Save",
         Cancel = "Cancel",
         Clear = "Clear",
@@ -122,14 +128,17 @@ internal static class AppLocalization
         PortugueseBrazilLabel = "Português (Brasil)",
         RefreshNow = "Atualizar agora",
         ConfigureShortcuts = "Configurar atalhos...",
+        SettingsMenu = "Configurações...",
         LaunchAtStartup = "Iniciar com o Windows",
         LaunchAtStartupManagedBySystem = "Iniciar com o Windows (gerenciado pelo sistema)",
         Exit = "Sair",
-        SettingsDialogTitle = "Configurar atalhos de lembrete",
-        SettingsTitle = "Atalhos exibidos no popup",
-        SettingsDescription = "Esses atalhos servem apenas como lembrete. Clique em um campo, pressione a sequência na ordem desejada e salve. Se deixar vazio, o popup mostra apenas a própria tecla.",
+        SettingsDialogTitle = "Configurações",
+        SettingsTitle = "Configurações do popup",
+        SettingsDescription = "Escolha como os atalhos devem aparecer no popup e qual cor usar quando um indicador estiver ativo.",
         SettingsPrefixModeLabel = "Prefixo inicial da função",
         SettingsCustomPrefixLabel = "Texto personalizado",
+        SettingsActiveColorLabel = "Cor do indicador ativo",
+        SettingsChooseColor = "Escolher...",
         Save = "Salvar",
         Cancel = "Cancelar",
         Clear = "Limpar",

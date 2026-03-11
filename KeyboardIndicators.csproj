@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="artifacts\" />
     <Folder Include="publish\" />
   </ItemGroup>
 

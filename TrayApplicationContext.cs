@@ -357,7 +357,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private void UpdateMenuTexts()
     {
         _refreshNowMenuItem.Text = _strings.RefreshNow;
-        _configureShortcutsMenuItem.Text = _strings.ConfigureShortcuts;
+        _configureShortcutsMenuItem.Text = _strings.SettingsMenu;
         _languageMenuItem.Text = _strings.LanguageMenu;
         _systemLanguageMenuItem.Text = _strings.UseSystemLanguage;
         _englishLanguageMenuItem.Text = _strings.EnglishLabel;
@@ -398,8 +398,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _lastAppliedTaskbarIsLight = _taskbarIsLight;
         _lastAppliedAppsLightTheme = _appsLightTheme;
 
-        _notifyIcon.Icon = GetOrCreateIcon(numLock, capsLock, scrollLock, _taskbarIsLight);
+        var activeColor = _settings.GetActiveIndicatorColor();
+        _notifyIcon.Icon = GetOrCreateIcon(numLock, capsLock, scrollLock, _taskbarIsLight, activeColor);
         _statusPopup.ApplyTheme(_appsLightTheme);
+        _statusPopup.ApplyActiveColor(activeColor);
         _statusPopup.UpdateContent(numLock, capsLock, scrollLock, _settings, _strings);
     }
 
@@ -601,9 +603,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
         return result != AppModelErrorNoPackage;
     }
 
-    private Icon GetOrCreateIcon(bool numLock, bool capsLock, bool scrollLock, bool taskbarIsLight)
+    private Icon GetOrCreateIcon(bool numLock, bool capsLock, bool scrollLock, bool taskbarIsLight, Color activeColor)
     {
-        var key = new IconCacheKey(numLock, capsLock, scrollLock, taskbarIsLight);
+        var key = new IconCacheKey(numLock, capsLock, scrollLock, taskbarIsLight, activeColor.ToArgb());
         if (_iconCache.TryGetValue(key, out var icon))
         {
             return icon;
@@ -625,9 +627,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             ? Color.FromArgb(88, 96, 105)
             : Color.FromArgb(172, 180, 189);
 
-        var activeColor = key.TaskbarIsLight
-            ? Color.FromArgb(34, 139, 74)
-            : Color.FromArgb(111, 214, 140);
+        var activeColor = Color.FromArgb(key.ActiveColorArgb);
 
         DrawBar(graphics, 1, key.NumLock ? activeColor : inactiveColor);
         DrawBar(graphics, 6, key.CapsLock ? activeColor : inactiveColor);
@@ -693,6 +693,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         public int Bottom;
     }
 
-    private readonly record struct IconCacheKey(bool NumLock, bool CapsLock, bool ScrollLock, bool TaskbarIsLight);
+    private readonly record struct IconCacheKey(bool NumLock, bool CapsLock, bool ScrollLock, bool TaskbarIsLight, int ActiveColorArgb);
     private const int AppModelErrorNoPackage = 15700;
 }

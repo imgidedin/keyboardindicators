@@ -76,12 +76,16 @@ internal sealed class StatusPopupForm : Form
         _backgroundColor = isLightTheme ? Color.FromArgb(250, 250, 250) : Color.FromArgb(43, 43, 46);
         _foregroundColor = isLightTheme ? Color.FromArgb(26, 26, 28) : Color.FromArgb(244, 244, 245);
         _mutedColor = isLightTheme ? Color.FromArgb(109, 109, 116) : Color.FromArgb(174, 174, 178);
-        _activeColor = isLightTheme ? Color.FromArgb(34, 139, 74) : Color.FromArgb(111, 214, 140);
 
         BackColor = _backgroundColor;
         ForeColor = _foregroundColor;
         UpdateTextColors();
         Invalidate();
+    }
+
+    public void ApplyActiveColor(Color activeColor)
+    {
+        _activeColor = activeColor;
     }
 
     public void ApplyStrings(AppStrings strings)
