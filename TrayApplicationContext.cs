@@ -4,10 +4,11 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Timer = System.Windows.Forms.Timer;
+using Windows.ApplicationModel;
 
 namespace KeyboardIndicators;
 
-[SupportedOSPlatform("windows")]
+[SupportedOSPlatform("windows10.0.17763.0")]
 internal sealed class TrayApplicationContext : ApplicationContext
 {
     private const string AppName = "KeyboardIndicators";
@@ -41,6 +42,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly bool _isPackaged;
     private AppLanguage _effectiveLanguage;
     private AppStrings _strings;
+    private StartupTaskState? _packagedStartupState;
     private bool _lastNumLock;
     private bool _lastCapsLock;
     private bool _lastScrollLock;
@@ -162,6 +164,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         UpdateLaunchAtStartupMenu();
         RefreshIcon(force: true);
         _refreshTimer.Start();
+        _ = RefreshPackagedStartupStateAsync();
     }
 
     protected override void ExitThreadCore()
@@ -233,10 +236,11 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _immediateRefreshTimer.Start();
     }
 
-    private void ToggleLaunchAtStartup(object? sender, EventArgs e)
+    private async void ToggleLaunchAtStartup(object? sender, EventArgs e)
     {
         if (_isPackaged)
         {
+            await TogglePackagedLaunchAtStartupAsync();
             return;
         }
 
@@ -260,6 +264,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
         UpdateLaunchAtStartupMenu();
     }
 
+    [SupportedOSPlatform("windows10.0.17763.0")]
+    private async Task TogglePackagedLaunchAtStartupAsync()
+    {
+        _launchAtStartupMenuItem.Enabled = false;
+        var shouldEnable = _packagedStartupState is not StartupTaskState.Enabled;
+        _packagedStartupState = await StartupTaskManager.SetEnabledAsync(shouldEnable);
+        UpdateLaunchAtStartupMenu();
+    }
+
     private void OpenShortcutSettings(object? sender, EventArgs e)
     {
         SuppressAndHidePopup();
@@ -276,14 +289,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
         RefreshIcon(force: true);
     }
 
+    [SupportedOSPlatform("windows10.0.17763.0")]
     private void UpdateLaunchAtStartupMenu()
     {
         if (_isPackaged)
         {
-            _launchAtStartupMenuItem.Text = _strings.LaunchAtStartupManagedBySystem;
-            _launchAtStartupMenuItem.Checked = false;
+            _launchAtStartupMenuItem.Text = _strings.LaunchAtStartup;
             _launchAtStartupMenuItem.CheckOnClick = false;
-            _launchAtStartupMenuItem.Enabled = false;
+            _launchAtStartupMenuItem.Checked = _packagedStartupState == StartupTaskState.Enabled;
+            _launchAtStartupMenuItem.Enabled = _packagedStartupState is not StartupTaskState.DisabledByPolicy;
             return;
         }
 
@@ -291,6 +305,31 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _launchAtStartupMenuItem.CheckOnClick = true;
         _launchAtStartupMenuItem.Enabled = true;
         _launchAtStartupMenuItem.Checked = IsLaunchAtStartupEnabled();
+    }
+
+    [SupportedOSPlatform("windows10.0.17763.0")]
+    private async Task RefreshPackagedStartupStateAsync()
+    {
+        if (!_isPackaged)
+        {
+            return;
+        }
+
+        _packagedStartupState = await StartupTaskManager.GetStateAsync();
+        if (_notifyIcon.Container is null && _notifyIcon.Icon is null)
+        {
+            return;
+        }
+
+        if (Application.MessageLoop)
+        {
+            _notifyIcon.ContextMenuStrip?.BeginInvoke(UpdateLaunchAtStartupMenu);
+        }
+        else
+        {
+            _launchAtStartupMenuItem.CheckOnClick = false;
+            UpdateLaunchAtStartupMenu();
+        }
     }
 
     private void SetLanguagePreference(AppLanguagePreference? preference)

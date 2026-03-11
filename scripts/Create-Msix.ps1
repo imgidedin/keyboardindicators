@@ -20,6 +20,7 @@ $stageDirectory = Join-Path $projectRoot "artifacts\\msix-stage"
 $resolvedOutputPath = [System.IO.Path]::GetFullPath((Join-Path $projectRoot $OutputPath))
 $artifactsDirectory = Split-Path -Parent $resolvedOutputPath
 $certificatePath = Join-Path $artifactsDirectory "KeyboardIndicators-TestCert.pfx"
+$certificatePublicPath = Join-Path $artifactsDirectory "KeyboardIndicators-TestCert.cer"
 
 function Get-ToolPath([string]$toolName) {
     $tool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter $toolName -Recurse -ErrorAction SilentlyContinue |
@@ -91,7 +92,10 @@ $certificate = New-SelfSignedCertificate `
     -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3")
 
 Export-PfxCertificate -Cert $certificate -FilePath $certificatePath -Password $password | Out-Null
-Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" -Password $password | Out-Null
+Export-Certificate -Cert $certificate -FilePath $certificatePublicPath | Out-Null
+Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation "Cert:\CurrentUser\My" -Password $password | Out-Null
+Import-Certificate -FilePath $certificatePublicPath -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
+Import-Certificate -FilePath $certificatePublicPath -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
 
 Write-Host "Assinando pacote..."
 $signTool = Get-ToolPath "signtool.exe"
@@ -99,12 +103,28 @@ $signTool = Get-ToolPath "signtool.exe"
 
 if ($Install) {
     Write-Host "Instalando pacote..."
-    Add-AppxPackage $resolvedOutputPath
+    try {
+        Add-AppxPackage $resolvedOutputPath
+    }
+    catch {
+        $errorText = $_.Exception.Message
+        if ($errorText -match "0x800B0109|0x800B010A") {
+            Write-Host ""
+            Write-Host "Falha de confianca no certificado." -ForegroundColor Yellow
+            Write-Host "Abra um PowerShell como Administrador e execute:" -ForegroundColor Yellow
+            Write-Host "Import-Certificate -FilePath `"$certificatePublicPath`" -CertStoreLocation 'Cert:\LocalMachine\Root'"
+            Write-Host "Import-Certificate -FilePath `"$certificatePublicPath`" -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople'"
+            Write-Host "Add-AppxPackage `"$resolvedOutputPath`""
+        }
+
+        throw
+    }
 }
 
 Write-Host ""
 Write-Host "MSIX gerado em: $resolvedOutputPath"
 Write-Host "Certificado de teste: $certificatePath"
+Write-Host "Certificado publico: $certificatePublicPath"
 if ($Install) {
     Write-Host "Pacote instalado com sucesso."
 }
