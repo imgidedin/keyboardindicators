@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="KeyboardIndicators.csproj" />
+  <Project Path="KeyboardIndicators.Package\KeyboardIndicators.Package.wapproj" />
+</Solution>
