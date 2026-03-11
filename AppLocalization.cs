@@ -28,9 +28,17 @@ internal sealed class AppStrings
     public required string SettingsDialogTitle { get; init; }
     public required string SettingsTitle { get; init; }
     public required string SettingsDescription { get; init; }
+    public required string SettingsPrefixModeLabel { get; init; }
+    public required string SettingsCustomPrefixLabel { get; init; }
     public required string Save { get; init; }
     public required string Cancel { get; init; }
     public required string Clear { get; init; }
+    public required string PrefixNone { get; init; }
+    public required string PrefixCode { get; init; }
+    public required string PrefixFn { get; init; }
+    public required string PrefixCustom { get; init; }
+    public required string CustomPrefixValidationMessage { get; init; }
+    public required string ValidationErrorTitle { get; init; }
     public required string PopupKeyHeader { get; init; }
     public required string PopupStateHeader { get; init; }
     public required string PopupShortcutHeader { get; init; }
@@ -71,9 +79,17 @@ internal static class AppLocalization
         SettingsDialogTitle = "Configure shortcut reminders",
         SettingsTitle = "Shortcuts shown in the popup",
         SettingsDescription = "These shortcuts are only shown as reminders. Click a field, press the sequence in the desired order, and save. If left empty, the popup shows only the key itself.",
+        SettingsPrefixModeLabel = "Initial function label",
+        SettingsCustomPrefixLabel = "Custom label",
         Save = "Save",
         Cancel = "Cancel",
         Clear = "Clear",
+        PrefixNone = "Do not show",
+        PrefixCode = "Code",
+        PrefixFn = "Fn",
+        PrefixCustom = "Custom",
+        CustomPrefixValidationMessage = "Enter a custom label with up to 10 characters.",
+        ValidationErrorTitle = "Invalid value",
         PopupKeyHeader = "Key",
         PopupStateHeader = "State",
         PopupShortcutHeader = "Shortcut",
@@ -112,9 +128,17 @@ internal static class AppLocalization
         SettingsDialogTitle = "Configurar atalhos de lembrete",
         SettingsTitle = "Atalhos exibidos no popup",
         SettingsDescription = "Esses atalhos servem apenas como lembrete. Clique em um campo, pressione a sequência na ordem desejada e salve. Se deixar vazio, o popup mostra apenas a própria tecla.",
+        SettingsPrefixModeLabel = "Prefixo inicial da função",
+        SettingsCustomPrefixLabel = "Texto personalizado",
         Save = "Salvar",
         Cancel = "Cancelar",
         Clear = "Limpar",
+        PrefixNone = "Não exibir",
+        PrefixCode = "Code",
+        PrefixFn = "Fn",
+        PrefixCustom = "Personalizada",
+        CustomPrefixValidationMessage = "Informe um texto personalizado com até 10 caracteres.",
+        ValidationErrorTitle = "Valor inválido",
         PopupKeyHeader = "Tecla",
         PopupStateHeader = "Estado",
         PopupShortcutHeader = "Atalho",

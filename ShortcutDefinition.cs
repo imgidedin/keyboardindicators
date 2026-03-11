@@ -25,9 +25,16 @@ internal sealed class ShortcutDefinition
         return IsEmpty ? "Not configured" : string.Join(" + ", Sequence.Select(key => FormatKey(key, AppLocalization.Get(AppLanguage.English))));
     }
 
-    public string ToHintText(string fallbackKeyName, AppStrings strings)
+    public string ToHintText(string fallbackKeyName, AppStrings strings, AppSettings settings)
     {
-        return IsEmpty ? fallbackKeyName : $"{strings.ShortcutHintPrefix} + {string.Join(" + ", Sequence.Select(key => FormatKey(key, strings)))}";
+        if (IsEmpty)
+        {
+            return fallbackKeyName;
+        }
+
+        var sequenceText = string.Join(" + ", Sequence.Select(key => FormatKey(key, strings)));
+        var prefix = settings.GetShortcutPrefix(strings);
+        return string.IsNullOrWhiteSpace(prefix) ? sequenceText : $"{prefix} + {sequenceText}";
     }
 
     public static IReadOnlyList<System.Windows.Forms.Keys> Normalize(IEnumerable<System.Windows.Forms.Keys> keys)

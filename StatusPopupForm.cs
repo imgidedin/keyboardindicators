@@ -98,15 +98,15 @@ internal sealed class StatusPopupForm : Form
     {
         _numState.Text = numLock ? strings.On : strings.Off;
         _numState.ForeColor = numLock ? _activeColor : _mutedColor;
-        _numHint.Text = settings.NumLockShortcut.ToHintText(strings.NumLockName, strings);
+        _numHint.Text = settings.NumLockShortcut.ToHintText(strings.NumLockName, strings, settings);
 
         _capsState.Text = capsLock ? strings.On : strings.Off;
         _capsState.ForeColor = capsLock ? _activeColor : _mutedColor;
-        _capsHint.Text = settings.CapsLockShortcut.ToHintText(strings.CapsLockName, strings);
+        _capsHint.Text = settings.CapsLockShortcut.ToHintText(strings.CapsLockName, strings, settings);
 
         _scrollState.Text = scrollLock ? strings.On : strings.Off;
         _scrollState.ForeColor = scrollLock ? _activeColor : _mutedColor;
-        _scrollHint.Text = settings.ScrollLockShortcut.ToHintText(strings.ScrollLockName, strings);
+        _scrollHint.Text = settings.ScrollLockShortcut.ToHintText(strings.ScrollLockName, strings, settings);
     }
 
     public Rectangle BoundsOnScreen => new(Location, Size);
