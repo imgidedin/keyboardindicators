@@ -22,12 +22,12 @@ internal sealed class ShortcutDefinition
 
     public override string ToString()
     {
-        return IsEmpty ? "Nao configurado" : string.Join(" + ", Sequence.Select(FormatKey));
+        return IsEmpty ? "Not configured" : string.Join(" + ", Sequence.Select(key => FormatKey(key, AppLocalization.Get(AppLanguage.English))));
     }
 
-    public string ToHintText(string fallbackKeyName)
+    public string ToHintText(string fallbackKeyName, AppStrings strings)
     {
-        return IsEmpty ? fallbackKeyName : $"Code + {string.Join(" + ", Sequence.Select(FormatKey))}";
+        return IsEmpty ? fallbackKeyName : $"{strings.ShortcutHintPrefix} + {string.Join(" + ", Sequence.Select(key => FormatKey(key, strings)))}";
     }
 
     public static IReadOnlyList<System.Windows.Forms.Keys> Normalize(IEnumerable<System.Windows.Forms.Keys> keys)
@@ -39,25 +39,25 @@ internal sealed class ShortcutDefinition
             .ToArray();
     }
 
-    public static string FormatKey(System.Windows.Forms.Keys key)
+    public static string FormatKey(System.Windows.Forms.Keys key, AppStrings strings)
     {
         return NormalizeKey(key) switch
         {
-            System.Windows.Forms.Keys.ShiftKey => "L/R Shift",
-            System.Windows.Forms.Keys.RShiftKey => "Right Shift",
-            System.Windows.Forms.Keys.LShiftKey => "Left Shift",
-            System.Windows.Forms.Keys.ControlKey => "L/R Ctrl",
-            System.Windows.Forms.Keys.RControlKey => "Right Ctrl",
-            System.Windows.Forms.Keys.LControlKey => "Left Ctrl",
-            System.Windows.Forms.Keys.Menu => "L/R Alt",
-            System.Windows.Forms.Keys.RMenu => "Right Alt",
-            System.Windows.Forms.Keys.LMenu => "Left Alt",
-            System.Windows.Forms.Keys.Return => "Enter",
-            System.Windows.Forms.Keys.Prior => "Page Up",
-            System.Windows.Forms.Keys.Next => "Page Down",
-            System.Windows.Forms.Keys.Capital => "Caps Lock",
-            System.Windows.Forms.Keys.NumLock => "Num Lock",
-            System.Windows.Forms.Keys.Scroll => "Scroll Lock",
+            System.Windows.Forms.Keys.ShiftKey => strings.LeftRightShift,
+            System.Windows.Forms.Keys.RShiftKey => strings.RightShift,
+            System.Windows.Forms.Keys.LShiftKey => strings.LeftShift,
+            System.Windows.Forms.Keys.ControlKey => strings.LeftRightCtrl,
+            System.Windows.Forms.Keys.RControlKey => strings.RightCtrl,
+            System.Windows.Forms.Keys.LControlKey => strings.LeftCtrl,
+            System.Windows.Forms.Keys.Menu => strings.LeftRightAlt,
+            System.Windows.Forms.Keys.RMenu => strings.RightAlt,
+            System.Windows.Forms.Keys.LMenu => strings.LeftAlt,
+            System.Windows.Forms.Keys.Return => strings.Enter,
+            System.Windows.Forms.Keys.Prior => strings.PageUp,
+            System.Windows.Forms.Keys.Next => strings.PageDown,
+            System.Windows.Forms.Keys.Capital => strings.CapsLockName,
+            System.Windows.Forms.Keys.NumLock => strings.NumLockName,
+            System.Windows.Forms.Keys.Scroll => strings.ScrollLockName,
             _ => NormalizeKey(key).ToString()
         };
     }

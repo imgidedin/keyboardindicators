@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace KeyboardIndicators;
 
@@ -6,7 +7,11 @@ internal sealed class AppSettingsStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        WriteIndented = true
+        WriteIndented = true,
+        Converters =
+        {
+            new JsonStringEnumConverter()
+        }
     };
 
     private readonly string _settingsPath;

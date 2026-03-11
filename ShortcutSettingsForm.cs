@@ -2,22 +2,25 @@ namespace KeyboardIndicators;
 
 internal sealed class ShortcutSettingsForm : Form
 {
+    private readonly AppStrings _strings;
     private readonly ShortcutCaptureTextBox _numLockTextBox;
     private readonly ShortcutCaptureTextBox _capsLockTextBox;
     private readonly ShortcutCaptureTextBox _scrollLockTextBox;
 
     public AppSettings Settings { get; private set; }
 
-    public ShortcutSettingsForm(AppSettings currentSettings)
+    public ShortcutSettingsForm(AppSettings currentSettings, AppStrings strings)
     {
+        _strings = strings;
         Settings = new AppSettings
         {
+            LanguagePreference = currentSettings.LanguagePreference,
             NumLockShortcut = currentSettings.NumLockShortcut.Clone(),
             CapsLockShortcut = currentSettings.CapsLockShortcut.Clone(),
             ScrollLockShortcut = currentSettings.ScrollLockShortcut.Clone()
         };
 
-        Text = "Configurar atalhos de lembrete";
+        Text = _strings.SettingsDialogTitle;
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -29,7 +32,7 @@ internal sealed class ShortcutSettingsForm : Form
         {
             AutoSize = true,
             Location = new Point(16, 16),
-            Text = "Atalhos exibidos no popup"
+            Text = _strings.SettingsTitle
         };
 
         var descriptionLabel = new Label
@@ -37,28 +40,28 @@ internal sealed class ShortcutSettingsForm : Form
             AutoSize = false,
             Location = new Point(16, 42),
             Size = new Size(528, 52),
-            Text = "Esses atalhos servem apenas como lembrete. Clique em um campo, pressione a sequencia na ordem desejada e salve. Se deixar vazio, o popup mostra apenas a propria tecla."
+            Text = _strings.SettingsDescription
         };
 
-        _numLockTextBox = new ShortcutCaptureTextBox(Settings.NumLockShortcut) { Location = new Point(160, 108) };
-        _capsLockTextBox = new ShortcutCaptureTextBox(Settings.CapsLockShortcut) { Location = new Point(160, 146) };
-        _scrollLockTextBox = new ShortcutCaptureTextBox(Settings.ScrollLockShortcut) { Location = new Point(160, 184) };
+        _numLockTextBox = new ShortcutCaptureTextBox(Settings.NumLockShortcut, _strings) { Location = new Point(160, 108) };
+        _capsLockTextBox = new ShortcutCaptureTextBox(Settings.CapsLockShortcut, _strings) { Location = new Point(160, 146) };
+        _scrollLockTextBox = new ShortcutCaptureTextBox(Settings.ScrollLockShortcut, _strings) { Location = new Point(160, 184) };
 
         Controls.Add(titleLabel);
         Controls.Add(descriptionLabel);
-        Controls.Add(CreateRowLabel("NumLock", 112));
-        Controls.Add(CreateRowLabel("CapsLock", 150));
-        Controls.Add(CreateRowLabel("ScrollLock", 188));
+        Controls.Add(CreateRowLabel(_strings.NumLockName, 112));
+        Controls.Add(CreateRowLabel(_strings.CapsLockName, 150));
+        Controls.Add(CreateRowLabel(_strings.ScrollLockName, 188));
         Controls.Add(_numLockTextBox);
         Controls.Add(_capsLockTextBox);
         Controls.Add(_scrollLockTextBox);
-        Controls.Add(CreateClearButton(_numLockTextBox, 454, 107));
-        Controls.Add(CreateClearButton(_capsLockTextBox, 454, 145));
-        Controls.Add(CreateClearButton(_scrollLockTextBox, 454, 183));
+        Controls.Add(CreateClearButton(_numLockTextBox, _strings, 454, 107));
+        Controls.Add(CreateClearButton(_capsLockTextBox, _strings, 454, 145));
+        Controls.Add(CreateClearButton(_scrollLockTextBox, _strings, 454, 183));
 
         var saveButton = new Button
         {
-            Text = "Salvar",
+            Text = _strings.Save,
             DialogResult = DialogResult.OK,
             Location = new Point(388, 214),
             Size = new Size(75, 28)
@@ -67,7 +70,7 @@ internal sealed class ShortcutSettingsForm : Form
 
         var cancelButton = new Button
         {
-            Text = "Cancelar",
+            Text = _strings.Cancel,
             DialogResult = DialogResult.Cancel,
             Location = new Point(469, 214),
             Size = new Size(75, 28)
@@ -90,11 +93,11 @@ internal sealed class ShortcutSettingsForm : Form
         };
     }
 
-    private static Button CreateClearButton(ShortcutCaptureTextBox textBox, int x, int y)
+    private static Button CreateClearButton(ShortcutCaptureTextBox textBox, AppStrings strings, int x, int y)
     {
         var button = new Button
         {
-            Text = "Limpar",
+            Text = strings.Clear,
             Location = new Point(x, y),
             Size = new Size(75, 28)
         };
@@ -107,6 +110,7 @@ internal sealed class ShortcutSettingsForm : Form
     {
         Settings = new AppSettings
         {
+            LanguagePreference = Settings.LanguagePreference,
             NumLockShortcut = _numLockTextBox.Shortcut.Clone(),
             CapsLockShortcut = _capsLockTextBox.Shortcut.Clone(),
             ScrollLockShortcut = _scrollLockTextBox.Shortcut.Clone()
@@ -119,13 +123,15 @@ internal sealed class ShortcutSettingsForm : Form
 
 internal sealed class ShortcutCaptureTextBox : TextBox
 {
+    private readonly AppStrings _strings;
     private readonly List<Keys> _recordedKeys = [];
     private readonly HashSet<Keys> _pressedKeys = [];
 
     public ShortcutDefinition Shortcut => new(_recordedKeys);
 
-    public ShortcutCaptureTextBox(ShortcutDefinition shortcut)
+    public ShortcutCaptureTextBox(ShortcutDefinition shortcut, AppStrings strings)
     {
+        _strings = strings;
         _recordedKeys.AddRange(shortcut.Sequence);
         ReadOnly = true;
         ShortcutsEnabled = false;
@@ -189,7 +195,7 @@ internal sealed class ShortcutCaptureTextBox : TextBox
     private string FormatShortcut()
     {
         return _recordedKeys.Count == 0
-            ? "Nao configurado"
-            : string.Join(" + ", _recordedKeys.Select(ShortcutDefinition.FormatKey));
+            ? _strings.NotConfigured
+            : string.Join(" + ", _recordedKeys.Select(key => ShortcutDefinition.FormatKey(key, _strings)));
     }
 }

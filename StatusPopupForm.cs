@@ -11,10 +11,16 @@ internal sealed class StatusPopupForm : Form
 
     private readonly TableLayoutPanel _table;
     private readonly Timer _animationTimer;
+    private readonly Label _keyHeader;
+    private readonly Label _stateHeader;
+    private readonly Label _shortcutHeader;
+    private readonly Label _numKey;
     private readonly Label _numState;
     private readonly Label _numHint;
+    private readonly Label _capsKey;
     private readonly Label _capsState;
     private readonly Label _capsHint;
+    private readonly Label _scrollKey;
     private readonly Label _scrollState;
     private readonly Label _scrollHint;
 
@@ -46,7 +52,7 @@ internal sealed class StatusPopupForm : Form
             CellBorderStyle = TableLayoutPanelCellBorderStyle.None
         };
         _table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 78));
-        _table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 56));
+        _table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86));
         _table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
         _animationTimer = new Timer
@@ -55,13 +61,14 @@ internal sealed class StatusPopupForm : Form
         };
         _animationTimer.Tick += (_, _) => AdvanceAnimation();
 
-        AddHeaderRow();
-        (_numState, _numHint) = AddDataRow(1, "NumLock");
-        (_capsState, _capsHint) = AddDataRow(2, "CapsLock");
-        (_scrollState, _scrollHint) = AddDataRow(3, "ScrollLock");
+        (_keyHeader, _stateHeader, _shortcutHeader) = AddHeaderRow();
+        (_numKey, _numState, _numHint) = AddDataRow(1);
+        (_capsKey, _capsState, _capsHint) = AddDataRow(2);
+        (_scrollKey, _scrollState, _scrollHint) = AddDataRow(3);
 
         Controls.Add(_table);
         ApplyTheme(isLightTheme: true);
+        ApplyStrings(AppLocalization.Get(AppLanguage.English));
     }
 
     public void ApplyTheme(bool isLightTheme)
@@ -77,19 +84,29 @@ internal sealed class StatusPopupForm : Form
         Invalidate();
     }
 
-    public void UpdateContent(bool numLock, bool capsLock, bool scrollLock, AppSettings settings)
+    public void ApplyStrings(AppStrings strings)
     {
-        _numState.Text = numLock ? "On" : "Off";
+        _keyHeader.Text = strings.PopupKeyHeader;
+        _stateHeader.Text = strings.PopupStateHeader;
+        _shortcutHeader.Text = strings.PopupShortcutHeader;
+        _numKey.Text = strings.NumLockName;
+        _capsKey.Text = strings.CapsLockName;
+        _scrollKey.Text = strings.ScrollLockName;
+    }
+
+    public void UpdateContent(bool numLock, bool capsLock, bool scrollLock, AppSettings settings, AppStrings strings)
+    {
+        _numState.Text = numLock ? strings.On : strings.Off;
         _numState.ForeColor = numLock ? _activeColor : _mutedColor;
-        _numHint.Text = settings.NumLockShortcut.ToHintText("Num Lock");
+        _numHint.Text = settings.NumLockShortcut.ToHintText(strings.NumLockName, strings);
 
-        _capsState.Text = capsLock ? "On" : "Off";
+        _capsState.Text = capsLock ? strings.On : strings.Off;
         _capsState.ForeColor = capsLock ? _activeColor : _mutedColor;
-        _capsHint.Text = settings.CapsLockShortcut.ToHintText("Caps Lock");
+        _capsHint.Text = settings.CapsLockShortcut.ToHintText(strings.CapsLockName, strings);
 
-        _scrollState.Text = scrollLock ? "On" : "Off";
+        _scrollState.Text = scrollLock ? strings.On : strings.Off;
         _scrollState.ForeColor = scrollLock ? _activeColor : _mutedColor;
-        _scrollHint.Text = settings.ScrollLockShortcut.ToHintText("Scroll Lock");
+        _scrollHint.Text = settings.ScrollLockShortcut.ToHintText(strings.ScrollLockName, strings);
     }
 
     public Rectangle BoundsOnScreen => new(Location, Size);
@@ -188,24 +205,30 @@ internal sealed class StatusPopupForm : Form
         }
     }
 
-    private void AddHeaderRow()
+    private (Label keyHeader, Label stateHeader, Label shortcutHeader) AddHeaderRow()
     {
-        _table.Controls.Add(CreateCell("Tecla", true, ContentAlignment.MiddleLeft), 0, 0);
-        _table.Controls.Add(CreateCell("Estado", true, ContentAlignment.MiddleCenter), 1, 0);
-        _table.Controls.Add(CreateCell("Atalho", true, ContentAlignment.MiddleCenter), 2, 0);
+        var keyHeader = CreateCell(string.Empty, true, ContentAlignment.MiddleLeft);
+        var stateHeader = CreateCell(string.Empty, true, ContentAlignment.MiddleCenter);
+        var shortcutHeader = CreateCell(string.Empty, true, ContentAlignment.MiddleCenter);
+
+        _table.Controls.Add(keyHeader, 0, 0);
+        _table.Controls.Add(stateHeader, 1, 0);
+        _table.Controls.Add(shortcutHeader, 2, 0);
+
+        return (keyHeader, stateHeader, shortcutHeader);
     }
 
-    private (Label state, Label hint) AddDataRow(int row, string keyName)
+    private (Label key, Label state, Label hint) AddDataRow(int row)
     {
-        var keyLabel = CreateCell(keyName, false, ContentAlignment.MiddleLeft);
-        var stateLabel = CreateCell("Off", false, ContentAlignment.MiddleCenter);
+        var keyLabel = CreateCell(string.Empty, false, ContentAlignment.MiddleLeft);
+        var stateLabel = CreateCell(string.Empty, false, ContentAlignment.MiddleCenter);
         var hintLabel = CreateCell(string.Empty, false, ContentAlignment.MiddleCenter);
 
         _table.Controls.Add(keyLabel, 0, row);
         _table.Controls.Add(stateLabel, 1, row);
         _table.Controls.Add(hintLabel, 2, row);
 
-        return (stateLabel, hintLabel);
+        return (keyLabel, stateLabel, hintLabel);
     }
 
     private Label CreateCell(string text, bool header, ContentAlignment textAlign)

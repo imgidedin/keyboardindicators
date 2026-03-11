@@ -19,7 +19,14 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private static readonly FieldInfo? NotifyIconWindowField = typeof(NotifyIcon).GetField("window", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private readonly NotifyIcon _notifyIcon;
+    private readonly ToolStripMenuItem _refreshNowMenuItem;
+    private readonly ToolStripMenuItem _configureShortcutsMenuItem;
+    private readonly ToolStripMenuItem _languageMenuItem;
+    private readonly ToolStripMenuItem _systemLanguageMenuItem;
+    private readonly ToolStripMenuItem _englishLanguageMenuItem;
+    private readonly ToolStripMenuItem _portugueseBrazilLanguageMenuItem;
     private readonly ToolStripMenuItem _launchAtStartupMenuItem;
+    private readonly ToolStripMenuItem _exitMenuItem;
     private readonly Timer _refreshTimer;
     private readonly Timer _immediateRefreshTimer;
     private readonly Timer _hoverMonitorTimer;
@@ -32,6 +39,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private AppSettings _settings;
     private readonly bool _isPackaged;
+    private AppLanguage _effectiveLanguage;
+    private AppStrings _strings;
     private bool _lastNumLock;
     private bool _lastCapsLock;
     private bool _lastScrollLock;
@@ -49,20 +58,33 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _settings = _settingsStore.Load();
         _statusPopup = new StatusPopupForm();
         _isPackaged = IsRunningPackaged();
+        _effectiveLanguage = AppLocalization.Resolve(_settings.LanguagePreference);
+        _strings = AppLocalization.Get(_effectiveLanguage);
         _taskbarIsLight = IsTaskbarLightTheme();
         _appsLightTheme = IsAppsLightTheme();
         _keyboardHook = new KeyboardIndicatorHook(OnKeyboardIndicatorKeyPressed);
 
-        _launchAtStartupMenuItem = new ToolStripMenuItem("Iniciar com o Windows", null, ToggleLaunchAtStartup);
+        _refreshNowMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => RefreshIcon(force: true));
+        _configureShortcutsMenuItem = new ToolStripMenuItem(string.Empty, null, OpenShortcutSettings);
+        _systemLanguageMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => SetLanguagePreference(null));
+        _englishLanguageMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => SetLanguagePreference(AppLanguagePreference.English));
+        _portugueseBrazilLanguageMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => SetLanguagePreference(AppLanguagePreference.PortugueseBrazil));
+        _languageMenuItem = new ToolStripMenuItem(string.Empty, null,
+            _systemLanguageMenuItem,
+            _englishLanguageMenuItem,
+            _portugueseBrazilLanguageMenuItem);
+        _launchAtStartupMenuItem = new ToolStripMenuItem(string.Empty, null, ToggleLaunchAtStartup);
+        _exitMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ExitThread());
 
         var contextMenu = new ContextMenuStrip();
         contextMenu.Opening += (_, _) => SuppressAndHidePopup();
         contextMenu.Closing += (_, _) => _suppressPopupUntilUtc = DateTime.UtcNow.AddMilliseconds(150);
-        contextMenu.Items.Add(new ToolStripMenuItem("Atualizar agora", null, (_, _) => RefreshIcon(force: true)));
-        contextMenu.Items.Add(new ToolStripMenuItem("Configurar atalhos...", null, OpenShortcutSettings));
+        contextMenu.Items.Add(_refreshNowMenuItem);
+        contextMenu.Items.Add(_configureShortcutsMenuItem);
+        contextMenu.Items.Add(_languageMenuItem);
         contextMenu.Items.Add(_launchAtStartupMenuItem);
         contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(new ToolStripMenuItem("Sair", null, (_, _) => ExitThread()));
+        contextMenu.Items.Add(_exitMenuItem);
 
         _notifyIcon = new NotifyIcon
         {
@@ -136,6 +158,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
 
+        ApplyLanguage();
         UpdateLaunchAtStartupMenu();
         RefreshIcon(force: true);
         _refreshTimer.Start();
@@ -196,6 +219,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             _taskbarIsLight = IsTaskbarLightTheme();
             _appsLightTheme = IsAppsLightTheme();
+            if (_settings.LanguagePreference is null)
+            {
+                ApplyLanguage();
+            }
             RefreshIcon(force: true);
         }
     }
@@ -237,7 +264,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         SuppressAndHidePopup();
 
-        using var form = new ShortcutSettingsForm(_settings);
+        using var form = new ShortcutSettingsForm(_settings, _strings);
         if (form.ShowDialog() != DialogResult.OK)
         {
             return;
@@ -245,6 +272,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _settings = form.Settings;
         _settingsStore.Save(_settings);
+        ApplyLanguage();
         RefreshIcon(force: true);
     }
 
@@ -252,17 +280,54 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         if (_isPackaged)
         {
-            _launchAtStartupMenuItem.Text = "Iniciar com o Windows (gerenciado pelo sistema)";
+            _launchAtStartupMenuItem.Text = _strings.LaunchAtStartupManagedBySystem;
             _launchAtStartupMenuItem.Checked = false;
             _launchAtStartupMenuItem.CheckOnClick = false;
             _launchAtStartupMenuItem.Enabled = false;
             return;
         }
 
-        _launchAtStartupMenuItem.Text = "Iniciar com o Windows";
+        _launchAtStartupMenuItem.Text = _strings.LaunchAtStartup;
         _launchAtStartupMenuItem.CheckOnClick = true;
         _launchAtStartupMenuItem.Enabled = true;
         _launchAtStartupMenuItem.Checked = IsLaunchAtStartupEnabled();
+    }
+
+    private void SetLanguagePreference(AppLanguagePreference? preference)
+    {
+        if (_settings.LanguagePreference == preference)
+        {
+            return;
+        }
+
+        _settings.LanguagePreference = preference;
+        _settingsStore.Save(_settings);
+        ApplyLanguage();
+        RefreshIcon(force: true);
+    }
+
+    private void ApplyLanguage()
+    {
+        _effectiveLanguage = AppLocalization.Resolve(_settings.LanguagePreference);
+        _strings = AppLocalization.Get(_effectiveLanguage);
+        _statusPopup.ApplyStrings(_strings);
+        UpdateMenuTexts();
+        UpdateLaunchAtStartupMenu();
+    }
+
+    private void UpdateMenuTexts()
+    {
+        _refreshNowMenuItem.Text = _strings.RefreshNow;
+        _configureShortcutsMenuItem.Text = _strings.ConfigureShortcuts;
+        _languageMenuItem.Text = _strings.LanguageMenu;
+        _systemLanguageMenuItem.Text = _strings.UseSystemLanguage;
+        _englishLanguageMenuItem.Text = _strings.EnglishLabel;
+        _portugueseBrazilLanguageMenuItem.Text = _strings.PortugueseBrazilLabel;
+        _exitMenuItem.Text = _strings.Exit;
+
+        _systemLanguageMenuItem.Checked = _settings.LanguagePreference is null;
+        _englishLanguageMenuItem.Checked = _settings.LanguagePreference == AppLanguagePreference.English;
+        _portugueseBrazilLanguageMenuItem.Checked = _settings.LanguagePreference == AppLanguagePreference.PortugueseBrazil;
     }
 
     private static bool IsLaunchAtStartupEnabled()
@@ -296,13 +361,13 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _notifyIcon.Icon = GetOrCreateIcon(numLock, capsLock, scrollLock, _taskbarIsLight);
         _statusPopup.ApplyTheme(_appsLightTheme);
-        _statusPopup.UpdateContent(numLock, capsLock, scrollLock, _settings);
+        _statusPopup.UpdateContent(numLock, capsLock, scrollLock, _settings, _strings);
     }
 
     private void ShowStatusPopup()
     {
         _hideDelayTimer.Stop();
-        _statusPopup.UpdateContent(_lastNumLock, _lastCapsLock, _lastScrollLock, _settings);
+        _statusPopup.UpdateContent(_lastNumLock, _lastCapsLock, _lastScrollLock, _settings, _strings);
         _lastTrayIconBounds = TryGetTrayIconBounds() ?? (_lastTrayIconBounds.IsEmpty ? EstimateTrayIconBoundsFromCursor() : _lastTrayIconBounds);
         _statusPopup.Location = CalculatePopupLocation(_lastTrayIconBounds, _statusPopup.Size);
         _statusPopup.ShowAnimated();
