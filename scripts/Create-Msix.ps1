@@ -39,6 +39,22 @@ function Get-PackageIdentityValue([xml]$manifest, [string]$attributeName) {
     return $manifest.Package.Identity.$attributeName
 }
 
+function Test-IsAdministrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Import-TestCertificate([string]$certificateFilePath) {
+    Import-Certificate -FilePath $certificateFilePath -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
+    Import-Certificate -FilePath $certificateFilePath -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
+
+    if (Test-IsAdministrator) {
+        Import-Certificate -FilePath $certificateFilePath -CertStoreLocation "Cert:\LocalMachine\TrustedPeople" | Out-Null
+        Import-Certificate -FilePath $certificateFilePath -CertStoreLocation "Cert:\LocalMachine\Root" | Out-Null
+    }
+}
+
 function Start-PackagedApp([string]$packageName) {
     $package = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $package) {
@@ -106,8 +122,7 @@ $certificate = New-SelfSignedCertificate `
 Export-PfxCertificate -Cert $certificate -FilePath $certificatePath -Password $password | Out-Null
 Export-Certificate -Cert $certificate -FilePath $certificatePublicPath | Out-Null
 Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation "Cert:\CurrentUser\My" -Password $password | Out-Null
-Import-Certificate -FilePath $certificatePublicPath -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
-Import-Certificate -FilePath $certificatePublicPath -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
+Import-TestCertificate $certificatePublicPath
 
 Write-Host "Assinando pacote..."
 $signTool = Get-ToolPath "signtool.exe"
@@ -124,7 +139,10 @@ if ($Install) {
         if ($errorText -match "0x800B0109|0x800B010A") {
             Write-Host ""
             Write-Host "Falha de confianca no certificado." -ForegroundColor Yellow
-            Write-Host "Abra um PowerShell como Administrador e execute:" -ForegroundColor Yellow
+            if (-not (Test-IsAdministrator)) {
+                Write-Host "Execute este script em um PowerShell como Administrador para importar o certificado atual na maquina." -ForegroundColor Yellow
+            }
+            Write-Host "Se ainda precisar fazer manualmente, execute:" -ForegroundColor Yellow
             Write-Host "Import-Certificate -FilePath `"$certificatePublicPath`" -CertStoreLocation 'Cert:\LocalMachine\Root'"
             Write-Host "Import-Certificate -FilePath `"$certificatePublicPath`" -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople'"
             Write-Host "Add-AppxPackage `"$resolvedOutputPath`""
