@@ -5,7 +5,7 @@ param(
     [string]$ReportPath = (Join-Path (Get-Location) "artifacts\\wack-report.xml")
 )
 
-$appCert = Get-ChildItem "$env:ProgramFiles(x86)\Windows Kits\10\bin" -Filter appcert.exe -Recurse -ErrorAction SilentlyContinue |
+$appCert = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter appcert.exe -Recurse -ErrorAction SilentlyContinue |
     Sort-Object FullName -Descending |
     Select-Object -First 1 -ExpandProperty FullName
 

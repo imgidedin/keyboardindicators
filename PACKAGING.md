@@ -26,6 +26,18 @@ Para publicação na Store, associe o pacote ao aplicativo reservado no Partner 
 
 O projeto `.wapproj` depende do Windows SDK e das ferramentas de empacotamento do Visual Studio. Nesta maquina elas nao estao instaladas, entao o pacote nao foi gerado localmente.
 
+Para gerar um pacote de teste por linha de comando, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Create-Msix.ps1
+```
+
+Para instalar automaticamente o pacote gerado:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Create-Msix.ps1 -Install
+```
+
 Fluxo sugerido no Visual Studio 2022:
 
 1. Instalar a workload de empacotamento MSIX / Windows application packaging.
