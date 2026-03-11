@@ -38,6 +38,12 @@ Para instalar automaticamente o pacote gerado:
 powershell -ExecutionPolicy Bypass -File .\scripts\Create-Msix.ps1 -Install
 ```
 
+Para abrir a versao empacotada apos a instalacao:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Create-Msix.ps1 -Install -Launch
+```
+
 Fluxo sugerido no Visual Studio 2022:
 
 1. Instalar a workload de empacotamento MSIX / Windows application packaging.

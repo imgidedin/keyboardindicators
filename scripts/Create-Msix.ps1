@@ -3,7 +3,8 @@ param(
     [string]$RuntimeIdentifier = "win-x64",
     [string]$OutputPath = "artifacts\\KeyboardIndicators.msix",
     [string]$CertificatePassword = "keyboardindicators",
-    [switch]$Install
+    [switch]$Install,
+    [switch]$Launch
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,6 +37,16 @@ function Get-ToolPath([string]$toolName) {
 
 function Get-PackageIdentityValue([xml]$manifest, [string]$attributeName) {
     return $manifest.Package.Identity.$attributeName
+}
+
+function Start-PackagedApp([string]$packageName) {
+    $package = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $package) {
+        throw "Nao foi possivel localizar o pacote instalado '$packageName'."
+    }
+
+    $applicationId = "App"
+    Start-Process "explorer.exe" "shell:AppsFolder\$($package.PackageFamilyName)!$applicationId"
 }
 
 Write-Host "Encerrando instancias em execucao..."
@@ -79,6 +90,7 @@ $makeAppx = Get-ToolPath "makeappx.exe"
 & $makeAppx pack /d $stageDirectory /p $resolvedOutputPath /o
 
 [xml]$manifestIdentity = Get-Content $manifestPath
+$packageName = Get-PackageIdentityValue $manifestIdentity "Name"
 $publisher = Get-PackageIdentityValue $manifestIdentity "Publisher"
 
 Write-Host "Gerando certificado de teste..."
@@ -105,6 +117,7 @@ if ($Install) {
     Write-Host "Instalando pacote..."
     try {
         Add-AppxPackage $resolvedOutputPath
+        $Launch = $true
     }
     catch {
         $errorText = $_.Exception.Message
@@ -121,10 +134,18 @@ if ($Install) {
     }
 }
 
+if ($Launch) {
+    Write-Host "Abrindo aplicativo empacotado..."
+    Start-PackagedApp $packageName
+}
+
 Write-Host ""
 Write-Host "MSIX gerado em: $resolvedOutputPath"
 Write-Host "Certificado de teste: $certificatePath"
 Write-Host "Certificado publico: $certificatePublicPath"
 if ($Install) {
     Write-Host "Pacote instalado com sucesso."
+}
+elseif ($Launch) {
+    Write-Host "Aplicativo empacotado iniciado."
 }
