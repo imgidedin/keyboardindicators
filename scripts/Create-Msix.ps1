@@ -65,6 +65,13 @@ function Start-PackagedApp([string]$packageName) {
     Start-Process "explorer.exe" "shell:AppsFolder\$($package.PackageFamilyName)!$applicationId"
 }
 
+function Remove-ExistingPackage([string]$packageName) {
+    $installedPackages = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue
+    foreach ($installedPackage in $installedPackages) {
+        Remove-AppxPackage -Package $installedPackage.PackageFullName
+    }
+}
+
 Write-Host "Encerrando instancias em execucao..."
 Get-Process KeyboardIndicators -ErrorAction SilentlyContinue | Stop-Process -Force
 
@@ -131,6 +138,7 @@ $signTool = Get-ToolPath "signtool.exe"
 if ($Install) {
     Write-Host "Instalando pacote..."
     try {
+        Remove-ExistingPackage $packageName
         Add-AppxPackage $resolvedOutputPath
         $Launch = $true
     }
